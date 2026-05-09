@@ -15,28 +15,35 @@ from docx.oxml.ns import qn
 
 
 # =========================================================
-# BASE DIRECTORY
+# BASE DIRECTORIES
 # =========================================================
 
 if getattr(sys, "frozen", False):
 
-    BASE_DIR = sys._MEIPASS
+    # EXE temp extraction folder
+    APP_DIR = sys._MEIPASS
+
+    # Real folder beside EXE
+    ROOT_DIR = os.path.dirname(
+        sys.executable
+    )
 
 else:
 
-    BASE_DIR = os.path.dirname(
+    APP_DIR = os.path.dirname(
         os.path.dirname(
             os.path.abspath(__file__)
         )
     )
 
+    ROOT_DIR = APP_DIR
 
 # =========================================================
 # CONFIG
 # =========================================================
 
 CONFIG_FILE = os.path.join(
-    BASE_DIR,
+    APP_DIR,
     "config",
     "config.json"
 )
@@ -61,8 +68,13 @@ OUTPUT_FOLDER = config.get(
     "output"
 )
 
+output_root = os.path.join(
+    ROOT_DIR,
+    OUTPUT_FOLDER
+)
+
 os.makedirs(
-    os.path.join(BASE_DIR, OUTPUT_FOLDER),
+    output_root,
     exist_ok=True
 )
 
@@ -375,7 +387,7 @@ def find_cover_path(
 ):
 
     folder = os.path.join(
-        BASE_DIR,
+        APP_DIR,
         COVERS_FOLDER,
         journal_key
     )
@@ -569,7 +581,7 @@ def process_job(
         )
 
     template_path = os.path.join(
-        BASE_DIR,
+        APP_DIR,
         template_rel
     )
 
@@ -701,19 +713,28 @@ def process_job(
         f"{safe_basename} - مصمم الصفحة.docx"
     )
 
-    output_path = os.path.join(
-        BASE_DIR,
-        OUTPUT_FOLDER,
-        output_name
-    )
+    output_root = os.path.join(
+            ROOT_DIR,
+            OUTPUT_FOLDER
+        )
 
-    # Merge documents
+    os.makedirs(
+            output_root,
+            exist_ok=True
+        )
+
+    output_path = os.path.join(
+            output_root,
+            output_name
+        )
+
+            # Merge documents
     merge_with_composer(
-        temp_template,
-        research_file,
-        output_path,
-        cover
-    )
+                temp_template,
+                research_file,
+                output_path,
+                cover
+            )
 
     # Cleanup
     try:
