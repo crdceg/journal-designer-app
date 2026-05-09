@@ -1,6 +1,10 @@
-# core/processor.py
+# =========================================================
+# JOURNAL DESIGNER APP
+# Processor Core
+# =========================================================
 
 import os
+import sys
 import json
 import tempfile
 
@@ -10,29 +14,62 @@ from docx.shared import Inches
 from docx.oxml.ns import qn
 
 
-# =========================
-# PATHS & CONFIG
-# =========================
+# =========================================================
+# BASE DIRECTORY
+# =========================================================
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if getattr(sys, "frozen", False):
 
-CONFIG_FILE = os.path.join(BASE_DIR, "config", "config.json")
+    BASE_DIR = sys._MEIPASS
+
+else:
+
+    BASE_DIR = os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        )
+    )
+
+
+# =========================================================
+# CONFIG
+# =========================================================
+
+CONFIG_FILE = os.path.join(
+    BASE_DIR,
+    "config",
+    "config.json"
+)
 
 with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+
     config = json.load(f)
 
 JOURNALS = config.get("journals", {})
+
 ISSUES = config.get("issues", {})
+
 TEMPLATES = config.get("templates", {})
-COVERS_FOLDER = config.get("covers_folder", "covers")
-OUTPUT_FOLDER = config.get("output_folder", "output")
 
-os.makedirs(os.path.join(BASE_DIR, OUTPUT_FOLDER), exist_ok=True)
+COVERS_FOLDER = config.get(
+    "covers_folder",
+    "covers"
+)
+
+OUTPUT_FOLDER = config.get(
+    "output_folder",
+    "output"
+)
+
+os.makedirs(
+    os.path.join(BASE_DIR, OUTPUT_FOLDER),
+    exist_ok=True
+)
 
 
-# =========================
+# =========================================================
 # ISSUE CODES
-# =========================
+# =========================================================
 
 ISSUE_CODES = {
     "1": {
@@ -41,18 +78,21 @@ ISSUE_CODES = {
         "month_ar": "يناير",
         "issue_num": 1,
     },
+
     "2": {
         "code": "apr",
         "month_en": "April",
         "month_ar": "أبريل",
         "issue_num": 2,
     },
+
     "3": {
         "code": "jul",
         "month_en": "July",
         "month_ar": "يوليو",
         "issue_num": 3,
     },
+
     "4": {
         "code": "oct",
         "month_en": "October",
@@ -62,46 +102,75 @@ ISSUE_CODES = {
 }
 
 
-# =========================
+# =========================================================
 # TEXT REPLACEMENT
-# =========================
+# =========================================================
 
-def _replace_text_in_run_safe(run, replacements):
+def _replace_text_in_run_safe(
+    run,
+    replacements
+):
+
     text = run.text
 
     for key, val in replacements.items():
+
         if key in text:
-            text = text.replace(key, val)
+
+            text = text.replace(
+                key,
+                val
+            )
 
     run.text = text
 
 
-def replace_in_paragraph_preserve_format(paragraph, replacements):
+def replace_in_paragraph_preserve_format(
+    paragraph,
+    replacements
+):
+
     if not paragraph.runs:
         return
 
     for run in paragraph.runs:
-        _replace_text_in_run_safe(run, replacements)
 
-    full_text = "".join([r.text for r in paragraph.runs])
+        _replace_text_in_run_safe(
+            run,
+            replacements
+        )
+
+    full_text = "".join([
+        r.text for r in paragraph.runs
+    ])
 
     for key in replacements:
+
         if key in full_text:
 
             first_run = paragraph.runs[0]
+
             font = first_run.font
 
             new_text = full_text
 
             for k, v in replacements.items():
-                new_text = new_text.replace(k, v)
+
+                new_text = new_text.replace(
+                    k,
+                    v
+                )
 
             for r in paragraph.runs:
+
                 r.text = ""
 
-            new_run = paragraph.add_run(new_text)
+            new_run = paragraph.add_run(
+                new_text
+            )
 
             try:
+
                 if font.name:
                     new_run.font.name = font.name
 
@@ -109,11 +178,22 @@ def replace_in_paragraph_preserve_format(paragraph, replacements):
                     new_run.font.size = font.size
 
                 new_run.font.bold = font.bold
+
                 new_run.font.italic = font.italic
+
                 new_run.font.underline = font.underline
 
-                if font.color and getattr(font.color, "rgb", None):
-                    new_run.font.color.rgb = font.color.rgb
+                if (
+                    font.color
+                    and getattr(
+                        font.color,
+                        "rgb",
+                        None
+                    )
+                ):
+                    new_run.font.color.rgb = (
+                        font.color.rgb
+                    )
 
             except Exception:
                 pass
@@ -121,22 +201,41 @@ def replace_in_paragraph_preserve_format(paragraph, replacements):
             break
 
 
-def replace_in_cell(cell, replacements):
+def replace_in_cell(
+    cell,
+    replacements
+):
+
     for p in cell.paragraphs:
-        replace_in_paragraph_preserve_format(p, replacements)
+
+        replace_in_paragraph_preserve_format(
+            p,
+            replacements
+        )
 
     for tbl in getattr(cell, "tables", []):
+
         for r in tbl.rows:
+
             for c in r.cells:
-                replace_in_cell(c, replacements)
+
+                replace_in_cell(
+                    c,
+                    replacements
+                )
 
 
-def replace_in_element_xml(element, replacements):
+def replace_in_element_xml(
+    element,
+    replacements
+):
     """
-    Replace placeholders inside textboxes/shapes.
+    Replace placeholders
+    inside textboxes / shapes.
     """
 
     try:
+
         for node in element.iter():
 
             if node.tag == qn("w:t"):
@@ -146,8 +245,13 @@ def replace_in_element_xml(element, replacements):
                     text = node.text
 
                     for k, v in replacements.items():
+
                         if k in text:
-                            text = text.replace(k, v)
+
+                            text = text.replace(
+                                k,
+                                v
+                            )
 
                     node.text = text
 
@@ -155,95 +259,178 @@ def replace_in_element_xml(element, replacements):
         pass
 
 
-def replace_placeholders_in_doc(doc: Document, replacements):
+def replace_placeholders_in_doc(
+    doc,
+    replacements
+):
 
-    # paragraphs
+    # Paragraphs
     for p in doc.paragraphs:
-        replace_in_paragraph_preserve_format(p, replacements)
 
-    # tables
+        replace_in_paragraph_preserve_format(
+            p,
+            replacements
+        )
+
+    # Tables
     for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                replace_in_cell(cell, replacements)
 
-    # headers / footers
+        for row in table.rows:
+
+            for cell in row.cells:
+
+                replace_in_cell(
+                    cell,
+                    replacements
+                )
+
+    # Headers / Footers
     for section in doc.sections:
 
-        # headers
-        for attr in ["header", "first_page_header", "even_page_header"]:
+        # Headers
+        for attr in [
+            "header",
+            "first_page_header",
+            "even_page_header"
+        ]:
 
-            hdr = getattr(section, attr, None)
+            hdr = getattr(
+                section,
+                attr,
+                None
+            )
 
             if hdr:
 
                 for p in hdr.paragraphs:
-                    replace_in_paragraph_preserve_format(p, replacements)
+
+                    replace_in_paragraph_preserve_format(
+                        p,
+                        replacements
+                    )
 
                 for tbl in hdr.tables:
+
                     for row in tbl.rows:
+
                         for cell in row.cells:
-                            replace_in_cell(cell, replacements)
 
-                replace_in_element_xml(hdr._element, replacements)
+                            replace_in_cell(
+                                cell,
+                                replacements
+                            )
 
-        # footers
-        for attr in ["footer", "first_page_footer", "even_page_footer"]:
+                replace_in_element_xml(
+                    hdr._element,
+                    replacements
+                )
 
-            ftr = getattr(section, attr, None)
+        # Footers
+        for attr in [
+            "footer",
+            "first_page_footer",
+            "even_page_footer"
+        ]:
+
+            ftr = getattr(
+                section,
+                attr,
+                None
+            )
 
             if ftr:
 
                 for p in ftr.paragraphs:
-                    replace_in_paragraph_preserve_format(p, replacements)
+
+                    replace_in_paragraph_preserve_format(
+                        p,
+                        replacements
+                    )
 
                 for tbl in ftr.tables:
+
                     for row in tbl.rows:
+
                         for cell in row.cells:
-                            replace_in_cell(cell, replacements)
 
-                replace_in_element_xml(ftr._element, replacements)
+                            replace_in_cell(
+                                cell,
+                                replacements
+                            )
+
+                replace_in_element_xml(
+                    ftr._element,
+                    replacements
+                )
 
 
-# =========================
+# =========================================================
 # COVER HANDLING
-# =========================
+# =========================================================
 
-def find_cover_path(journal_key, issue_key, year):
+def find_cover_path(
+    journal_key,
+    issue_key,
+    year
+):
 
-    folder = os.path.join(BASE_DIR, COVERS_FOLDER, journal_key)
+    folder = os.path.join(
+        BASE_DIR,
+        COVERS_FOLDER,
+        journal_key
+    )
 
-    code = ISSUE_CODES.get(str(issue_key), {}).get("code")
+    code = ISSUE_CODES.get(
+        str(issue_key),
+        {}
+    ).get("code")
 
     if not code:
         return None
 
-    for ext in (".png", ".jpg", ".jpeg"):
+    for ext in (
+        ".png",
+        ".jpg",
+        ".jpeg"
+    ):
 
-        p = os.path.join(folder, f"{code}{year}{ext}")
+        path = os.path.join(
+            folder,
+            f"{code}{year}{ext}"
+        )
 
-        if os.path.isfile(p):
-            return p
+        if os.path.isfile(path):
+
+            return path
 
     return None
 
 
-# =========================
+# =========================================================
 # HELPERS
-# =========================
+# =========================================================
 
-def compute_volume(year, first_year):
+def compute_volume(
+    year,
+    first_year
+):
 
     try:
-        return int(year) - int(first_year) + 1
+
+        return (
+            int(year)
+            - int(first_year)
+            + 1
+        )
 
     except Exception:
+
         return 1
 
 
-# =========================
-# MERGE
-# =========================
+# =========================================================
+# DOCUMENT MERGING
+# =========================================================
 
 def merge_with_composer(
     template_doc_path,
@@ -255,22 +442,34 @@ def merge_with_composer(
     base = Document(template_doc_path)
 
     # Replace cover image
-    if cover_path and os.path.isfile(cover_path):
+    if (
+        cover_path
+        and os.path.isfile(cover_path)
+    ):
 
         try:
 
             section = base.sections[0]
 
-            page_width = section.page_width.inches
+            page_width = (
+                section.page_width.inches
+            )
 
-            left_margin = section.left_margin.inches
-            right_margin = section.right_margin.inches
+            left_margin = (
+                section.left_margin.inches
+            )
 
-            usable_width = page_width - (
-                left_margin + right_margin
+            right_margin = (
+                section.right_margin.inches
+            )
+
+            usable_width = (
+                page_width
+                - (left_margin + right_margin)
             )
 
             if usable_width <= 0:
+
                 usable_width = page_width
 
             first_shape_found = False
@@ -280,26 +479,32 @@ def merge_with_composer(
                 for run in p.runs:
 
                     if (
-                        "graphic" in run._element.xml
+                        "graphic"
+                        in run._element.xml
                         and not first_shape_found
                     ):
 
-                        p._element.remove(run._element)
+                        p._element.remove(
+                            run._element
+                        )
 
                         new_run = p.add_run()
 
                         new_run.add_picture(
                             cover_path,
-                            width=Inches(usable_width)
+                            width=Inches(
+                                usable_width
+                            )
                         )
 
                         first_shape_found = True
+
                         break
 
                 if first_shape_found:
                     break
 
-            # fallback
+            # Fallback
             if not first_shape_found:
 
                 first_para = (
@@ -312,11 +517,17 @@ def merge_with_composer(
 
                 run.add_picture(
                     cover_path,
-                    width=Inches(usable_width)
+                    width=Inches(
+                        usable_width
+                    )
                 )
 
         except Exception as e:
-            print("Cover replace failed:", e)
+
+            print(
+                "Cover replace failed:",
+                e
+            )
 
     composer = Composer(base)
 
@@ -327,9 +538,9 @@ def merge_with_composer(
     composer.save(output_path)
 
 
-# =========================
+# =========================================================
 # MAIN PROCESS
-# =========================
+# =========================================================
 
 def process_job(
     journal_key,
@@ -339,16 +550,20 @@ def process_job(
     research_file
 ):
 
+    # Validate journal
     if journal_key not in JOURNALS:
+
         raise FileNotFoundError(
             "المجلة غير موجودة في config.json"
         )
 
     journal_cfg = JOURNALS[journal_key]
 
+    # Validate template
     template_rel = TEMPLATES.get(lang)
 
     if not template_rel:
+
         raise FileNotFoundError(
             "لم يتم تعريف قالب لهذه اللغة"
         )
@@ -359,47 +574,76 @@ def process_job(
     )
 
     if not os.path.isfile(template_path):
+
         raise FileNotFoundError(
             f"القالب غير موجود:\n{template_path}"
         )
 
+    # Validate issue
     if str(issue_key) not in ISSUE_CODES:
+
         raise ValueError(
             "قيمة العدد غير صحيحة"
         )
 
     year_i = int(year)
 
+    # Volume
     volume = compute_volume(
         year_i,
-        journal_cfg.get("first_volume_year", year_i)
+        journal_cfg.get(
+            "first_volume_year",
+            year_i
+        )
     )
 
-    issue_num = ISSUE_CODES[str(issue_key)]["issue_num"]
+    issue_num = ISSUE_CODES[
+        str(issue_key)
+    ]["issue_num"]
 
     month_text = (
-        ISSUE_CODES[str(issue_key)]["month_ar"]
+        ISSUE_CODES[str(issue_key)][
+            "month_ar"
+        ]
         if lang == "ar"
-        else ISSUE_CODES[str(issue_key)]["month_en"]
+        else ISSUE_CODES[str(issue_key)][
+            "month_en"
+        ]
     )
 
+    # Placeholder replacements
     replacements = {
+
         "{JOURNAL_NAME}":
-            journal_cfg.get("name_ar")
-            if lang == "ar"
-            else journal_cfg.get("name_en"),
+            (
+                journal_cfg.get("name_ar")
+                if lang == "ar"
+                else journal_cfg.get("name_en")
+            ),
 
-        "{VOLUME}": str(volume),
+        "{VOLUME}":
+            str(volume),
 
-        "{ISSUE}": str(issue_num),
+        "{ISSUE}":
+            str(issue_num),
 
-        "{MONTH}": month_text,
+        "{MONTH}":
+            month_text,
 
-        "{YEAR}": str(year_i),
+        "{YEAR}":
+            str(year_i),
 
-        "{ISSN}": journal_cfg.get("issn", ""),
+        "{ISSN}":
+            journal_cfg.get(
+                "issn",
+                ""
+            ),
 
-        "{URL}": journal_cfg.get("url", ""),
+        "{URL}":
+            journal_cfg.get(
+                "url",
+                ""
+            ),
 
         "{VOLUME_ISSUE_DATE}":
             (
@@ -416,15 +660,16 @@ def process_job(
             )
     }
 
-    # fill template
+    # Open template
     doc = Document(template_path)
 
+    # Replace placeholders
     replace_placeholders_in_doc(
         doc,
         replacements
     )
 
-    # temp file
+    # Temporary file
     with tempfile.NamedTemporaryFile(
         delete=False,
         suffix=".docx"
@@ -434,14 +679,14 @@ def process_job(
 
     doc.save(temp_template)
 
-    # cover
+    # Find cover
     cover = find_cover_path(
         journal_key,
         issue_key,
         str(year_i)
     )
 
-    # output file
+    # Output file name
     research_basename = os.path.splitext(
         os.path.basename(research_file)
     )[0]
@@ -462,7 +707,7 @@ def process_job(
         output_name
     )
 
-    # merge
+    # Merge documents
     merge_with_composer(
         temp_template,
         research_file,
@@ -470,8 +715,9 @@ def process_job(
         cover
     )
 
-    # cleanup
+    # Cleanup
     try:
+
         os.remove(temp_template)
 
     except Exception:

@@ -1,8 +1,16 @@
+# =========================================================
+# JOURNAL DESIGNER APP
+# Main Window UI
+# =========================================================
 
-from PySide6.QtGui import QFontDatabase
 import os
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import (
+    QFontDatabase,
+    QIntValidator,
+)
+
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -26,12 +34,53 @@ from core.processor import (
 )
 
 
+# =========================================================
+# MAIN WINDOW
+# =========================================================
+
 class MainWindow(QWidget):
 
     def __init__(self):
         super().__init__()
+
+        self.research_file = ""
+
+        self.load_fonts()
+
+        self.setup_window()
+
+        self.setup_ui()
+
+        self.apply_style()
+
+    # =====================================================
+    # WINDOW SETUP
+    # =====================================================
+
+    def setup_window(self):
+
+        self.setWindowTitle(
+            "JOURNAL DESIGNER APP"
+        )
+
+        self.resize(850, 650)
+
+        self.setMinimumSize(800, 550)
+
+        self.setLayoutDirection(
+            Qt.RightToLeft
+        )
+
+    # =====================================================
+    # LOAD FONTS
+    # =====================================================
+
+    def load_fonts(self):
+
         font_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
+            os.path.dirname(
+                os.path.dirname(__file__)
+            ),
             "assets",
             "fonts",
             "Cairo-Regular.ttf"
@@ -40,25 +89,10 @@ class MainWindow(QWidget):
         QFontDatabase.addApplicationFont(
             font_path
         )
-        self.setWindowTitle("JOURNAL DESIGNER APP")
 
-        self.resize(560, 720)
-
-        self.setMinimumSize(520, 680)
-
-        self.setLayoutDirection(
-            Qt.RightToLeft
-        )
-
-        self.research_file = ""
-
-        self.setup_ui()
-
-        self.apply_style()
-
-    # =========================
+    # =====================================================
     # UI
-    # =========================
+    # =====================================================
 
     def setup_ui(self):
 
@@ -66,45 +100,58 @@ class MainWindow(QWidget):
         self.main_layout = QVBoxLayout(self)
 
         self.main_layout.setContentsMargins(
-            25, 25, 25, 25
+            30, 30, 30, 30
         )
-
-        self.main_layout.setSpacing(20)
 
         self.main_layout.setAlignment(
-            Qt.AlignTop
+            Qt.AlignCenter
         )
-        self.main_layout.setDirection(
-            QVBoxLayout.TopToBottom
-        )
-        # =========================
-        # CONTAINER
-        # =========================
 
+        # CONTAINER CARD
         self.container = QWidget()
 
         self.container.setObjectName(
             "container"
         )
 
+        self.container.setFixedWidth(750)
+
         self.container_layout = QVBoxLayout(
             self.container
         )
 
         self.container_layout.setContentsMargins(
-            25, 25, 25, 25
+            35, 35, 35, 35
         )
 
-        self.container_layout.setSpacing(12)
+        self.container_layout.setSpacing(20)
 
         self.main_layout.addWidget(
-            self.container,
-            alignment=Qt.AlignCenter
+            self.container
         )
 
-        # =========================
-        # TITLE
-        # =========================
+        # HEADER
+        self.build_header()
+
+        # JOURNAL + LANGUAGE
+        self.build_row_one()
+
+        # ISSUE + YEAR
+        self.build_row_two()
+
+        # FILE SECTION
+        self.build_file_section()
+
+        # ACTIONS
+        self.build_actions_section()
+
+    # =====================================================
+    # HEADER
+    # =====================================================
+
+    def build_header(self):
+
+        header_layout = QVBoxLayout()
 
         title = QLabel(
             "JOURNAL DESIGNER APP"
@@ -113,30 +160,42 @@ class MainWindow(QWidget):
         title.setObjectName("title")
 
         subtitle = QLabel(
-            "تصميم أبحاث المجلات العلمية"
+            "تصميم أبحاث المجلات العلمية - لوحة التحكم"
         )
 
         subtitle.setObjectName(
             "subtitle"
         )
 
-        self.container_layout.addWidget(
-            title
+        header_layout.addWidget(title)
+
+        header_layout.addWidget(subtitle)
+
+        self.container_layout.addLayout(
+            header_layout
         )
 
-        self.container_layout.addWidget(
-            subtitle
-        )
+    # =====================================================
+    # ROW 1
+    # JOURNAL + LANGUAGE
+    # =====================================================
+
+    def build_row_one(self):
+
+        row_layout = QHBoxLayout()
+
+        row_layout.setSpacing(20)
 
         # =========================
         # JOURNAL
         # =========================
 
-        journal_label = QLabel(
-            "المجلة"
-        )
+        journal_layout = QVBoxLayout()
 
-        journal_label.setObjectName(
+        journal_label = QLabel("المجلة")
+
+        journal_label.setProperty(
+            "class",
             "sectionLabel"
         )
 
@@ -155,11 +214,11 @@ class MainWindow(QWidget):
                 key
             )
 
-        self.container_layout.addWidget(
+        journal_layout.addWidget(
             journal_label
         )
 
-        self.container_layout.addWidget(
+        journal_layout.addWidget(
             self.journal_combo
         )
 
@@ -167,15 +226,18 @@ class MainWindow(QWidget):
         # LANGUAGE
         # =========================
 
+        lang_layout = QVBoxLayout()
+
         lang_label = QLabel(
-            "اللغة"
+            "لغة البحث"
         )
 
-        lang_label.setObjectName(
+        lang_label.setProperty(
+            "class",
             "sectionLabel"
         )
 
-        lang_layout = QHBoxLayout()
+        lang_buttons_layout = QHBoxLayout()
 
         self.ar_radio = QRadioButton(
             "العربية"
@@ -199,33 +261,59 @@ class MainWindow(QWidget):
             self.en_radio
         )
 
-        lang_layout.addWidget(
+        lang_buttons_layout.addWidget(
             self.ar_radio
         )
 
-        lang_layout.addWidget(
+        lang_buttons_layout.addWidget(
             self.en_radio
         )
 
-        lang_layout.addStretch()
-
-        self.container_layout.addWidget(
+        lang_layout.addWidget(
             lang_label
         )
 
-        self.container_layout.addLayout(
-            lang_layout
+        lang_layout.addLayout(
+            lang_buttons_layout
         )
+
+        # ADD TO ROW
+
+        row_layout.addLayout(
+            journal_layout,
+            2
+        )
+
+        row_layout.addLayout(
+            lang_layout,
+            1
+        )
+
+        self.container_layout.addLayout(
+            row_layout
+        )
+
+    # =====================================================
+    # ROW 2
+    # ISSUE + YEAR
+    # =====================================================
+
+    def build_row_two(self):
+
+        row_layout = QHBoxLayout()
+
+        row_layout.setSpacing(20)
 
         # =========================
         # ISSUE
         # =========================
 
-        issue_label = QLabel(
-            "العدد"
-        )
+        issue_layout = QVBoxLayout()
 
-        issue_label.setObjectName(
+        issue_label = QLabel("العدد")
+
+        issue_label.setProperty(
+            "class",
             "sectionLabel"
         )
 
@@ -242,11 +330,11 @@ class MainWindow(QWidget):
                 key
             )
 
-        self.container_layout.addWidget(
+        issue_layout.addWidget(
             issue_label
         )
 
-        self.container_layout.addWidget(
+        issue_layout.addWidget(
             self.issue_combo
         )
 
@@ -254,11 +342,14 @@ class MainWindow(QWidget):
         # YEAR
         # =========================
 
+        year_layout = QVBoxLayout()
+
         year_label = QLabel(
-            "السنة"
+            "سنة النشر"
         )
 
-        year_label.setObjectName(
+        year_label.setProperty(
+            "class",
             "sectionLabel"
         )
 
@@ -266,25 +357,43 @@ class MainWindow(QWidget):
 
         self.year_input.setText("2026")
 
-        self.container_layout.addWidget(
+        self.year_input.setValidator(
+            QIntValidator(2000, 2100)
+        )
+
+        year_layout.addWidget(
             year_label
         )
 
-        self.container_layout.addWidget(
+        year_layout.addWidget(
             self.year_input
         )
 
-        # =========================
-        # FILE
-        # =========================
+        # ADD TO ROW
 
-        file_label = QLabel(
-            "ملف البحث"
+        row_layout.addLayout(
+            issue_layout,
+            2
         )
 
-        file_label.setObjectName(
-            "sectionLabel"
+        row_layout.addLayout(
+            year_layout,
+            1
         )
+
+        self.container_layout.addLayout(
+            row_layout
+        )
+
+    # =====================================================
+    # FILE SECTION
+    # =====================================================
+
+    def build_file_section(self):
+
+        file_layout = QHBoxLayout()
+
+        file_layout.setSpacing(15)
 
         self.file_name = QLabel(
             "لم يتم اختيار ملف"
@@ -293,10 +402,6 @@ class MainWindow(QWidget):
         self.file_name.setObjectName(
             "fileLabel"
         )
-
-        self.file_name.setWordWrap(True)
-
-        self.file_name.setMinimumHeight(90)
 
         self.file_name.setAlignment(
             Qt.AlignCenter
@@ -310,27 +415,30 @@ class MainWindow(QWidget):
             "fileBtn"
         )
 
+        self.file_btn.setFixedWidth(180)
+
         self.file_btn.clicked.connect(
             self.choose_file
         )
 
-        self.container_layout.addWidget(
-            file_label
+        file_layout.addWidget(
+            self.file_name,
+            1
         )
 
-        self.container_layout.addWidget(
-            self.file_name
-        )
-
-        self.container_layout.addSpacing(8)
-
-        self.container_layout.addWidget(
+        file_layout.addWidget(
             self.file_btn
         )
 
-        # =========================
-        # PROGRESS
-        # =========================
+        self.container_layout.addLayout(
+            file_layout
+        )
+
+    # =====================================================
+    # ACTIONS SECTION
+    # =====================================================
+
+    def build_actions_section(self):
 
         self.progress = QProgressBar()
 
@@ -340,16 +448,16 @@ class MainWindow(QWidget):
             self.progress
         )
 
-        # =========================
-        # GENERATE BUTTON
-        # =========================
-
         self.generate_btn = QPushButton(
-            "إنشاء العدد"
+            "إنشاء وتنسيق البحث"
         )
 
         self.generate_btn.setObjectName(
             "generateBtn"
+        )
+
+        self.generate_btn.setMinimumHeight(
+            50
         )
 
         self.generate_btn.clicked.connect(
@@ -360,12 +468,8 @@ class MainWindow(QWidget):
             self.generate_btn
         )
 
-        # =========================
-        # STATUS
-        # =========================
-
         self.status_label = QLabel(
-            "جاهز"
+            "جاهز للعمل"
         )
 
         self.status_label.setObjectName(
@@ -373,106 +477,70 @@ class MainWindow(QWidget):
         )
 
         self.container_layout.addWidget(
-            self.status_label
+            self.status_label,
+            alignment=Qt.AlignCenter
         )
 
-    # =========================
+    # =====================================================
     # STYLE
-    # =========================
+    # =====================================================
 
     def apply_style(self):
 
         self.setStyleSheet("""
 
             QWidget {
-
                 background-color: #0d0d0d;
-
                 color: white;
-
-                font-size: 14px;
-
-                font-family: Cairo;
+                font-family: Cairo, Segoe UI;
             }
 
             #container {
-
                 background-color: #151515;
-
                 border: 1px solid #2a2a2a;
-
-                border-radius: 22px;
-            }
-
-            QLabel {
-                font-size: 14px;
+                border-radius: 20px;
             }
 
             #title {
-
-                font-size: 22px;
-
+                font-size: 26px;
                 font-weight: bold;
-
-                color: white;
+                color: #ffffff;
             }
 
             #subtitle {
-
-                font-size: 13px;
-
+                font-size: 14px;
                 color: #888888;
-
-                margin-bottom: 18px;
+                margin-bottom: 10px;
             }
 
-            .sectionLabel {
-
-                color: #d0d0d0;
-
+            QLabel[class="sectionLabel"] {
+                color: #c8a46b;
                 font-size: 13px;
-
                 font-weight: bold;
-
-                margin-top: 6px;
-
-                margin-bottom: 3px;
             }
 
             QComboBox,
             QLineEdit {
-
                 background-color: #1f1f1f;
-
                 border: 1px solid #333333;
-
-                border-radius: 12px;
-
-                padding: 12px;
-
+                border-radius: 10px;
+                padding: 10px;
+                font-size: 14px;
                 min-height: 22px;
             }
 
-            QComboBox::drop-down {
-
-                border: none;
-
-                width: 30px;
+            QComboBox:focus,
+            QLineEdit:focus {
+                border: 1px solid #c8a46b;
+                background-color: #252525;
             }
 
             QPushButton {
-
                 background-color: #262626;
-
-                border: none;
-
-                border-radius: 14px;
-
-                padding: 10px;
-
+                border-radius: 10px;
+                padding: 12px;
                 font-weight: bold;
-
-                min-height: 20px;
+                font-size: 14px;
             }
 
             QPushButton:hover {
@@ -480,30 +548,15 @@ class MainWindow(QWidget):
             }
 
             #fileBtn {
-
-                background-color: #252525;
-
-                border-radius: 14px;
-
-                padding: 10px;
-
-                font-size: 14px;
-
-                font-weight: bold;
-            }
-
-            #fileBtn:hover {
-
-                background-color: #333333;
+                background-color: #2a2a2a;
+                border: 1px solid #3d3d3d;
             }
 
             #generateBtn {
-
                 background-color: #c8a46b;
-
                 color: black;
-
-                font-size: 15px;
+                font-size: 16px;
+                margin-top: 10px;
             }
 
             #generateBtn:hover {
@@ -511,60 +564,44 @@ class MainWindow(QWidget):
             }
 
             #fileLabel {
-
-                color: #f5f5f5;
-
-                background-color: #181818;
-
-                border: 2px dashed #4a4a4a;
-
-                border-radius: 16px;
-
-                padding: 14px;
-
-                font-size: 13px;
-
-                font-weight: bold;
-
-                min-height: 50px;
-            }
-
-            #status {
-
+                background-color: #111111;
+                border: 2px dashed #333333;
+                border-radius: 10px;
+                padding: 10px;
                 color: #aaaaaa;
-
-                font-size: 13px;
-            }
-
-            QRadioButton {
-                spacing: 8px;
+                font-style: italic;
+                min-height: 40px;
             }
 
             QProgressBar {
-
                 border: none;
-
-                border-radius: 10px;
-
-                background-color: #1f1f1f;
-
+                border-radius: 4px;
+                background-color: #1a1a1a;
+                height: 8px;
                 text-align: center;
-
-                height: 10px;
+                font-size: 0px;
             }
 
             QProgressBar::chunk {
-
                 background-color: #c8a46b;
+                border-radius: 4px;
+            }
 
-                border-radius: 10px;
+            QRadioButton {
+                font-size: 13px;
+                spacing: 6px;
+            }
+
+            #status {
+                color: #666666;
+                font-size: 12px;
             }
 
         """)
 
-    # =========================
+    # =====================================================
     # FILE PICKER
-    # =========================
+    # =====================================================
 
     def choose_file(self):
 
@@ -584,12 +621,18 @@ class MainWindow(QWidget):
             )
 
             self.file_name.setText(
-                f"📄\n{filename}"
+                f"📄 {filename}"
             )
 
-    # =========================
-    # GENERATE
-    # =========================
+            self.file_name.setStyleSheet("""
+                color: #c8a46b;
+                font-style: normal;
+                border-color: #c8a46b;
+            """)
+
+    # =====================================================
+    # GENERATE DOCUMENT
+    # =====================================================
 
     def generate_document(self):
 
@@ -600,7 +643,7 @@ class MainWindow(QWidget):
                 QMessageBox.warning(
                     self,
                     "تنبيه",
-                    "اختر ملف البحث أولاً"
+                    "برجاء اختيار ملف البحث أولاً"
                 )
 
                 return
@@ -608,7 +651,7 @@ class MainWindow(QWidget):
             self.progress.setValue(20)
 
             self.status_label.setText(
-                "جارٍ تجهيز الملف..."
+                "جارٍ المعالجة..."
             )
 
             QApplication.processEvents()
@@ -627,11 +670,9 @@ class MainWindow(QWidget):
                 self.issue_combo.currentData()
             )
 
-            year = self.year_input.text().strip()
-
-            self.progress.setValue(50)
-
-            QApplication.processEvents()
+            year = (
+                self.year_input.text().strip()
+            )
 
             output = process_job(
                 journal_key=journal_key,
@@ -644,14 +685,16 @@ class MainWindow(QWidget):
             self.progress.setValue(100)
 
             self.status_label.setText(
-                "تم إنشاء الملف بنجاح"
+                "تمت العملية بنجاح"
             )
 
             QMessageBox.information(
                 self,
                 "تم بنجاح",
-                f"تم إنشاء الملف:\n\n{output}"
+                f"تم إنشاء الملف بنجاح:\n{output}"
             )
+
+            os.startfile(output)
 
         except Exception as e:
 
@@ -666,3 +709,20 @@ class MainWindow(QWidget):
                 "خطأ",
                 str(e)
             )
+
+
+# =========================================================
+# TEST RUN
+# =========================================================
+
+if __name__ == "__main__":
+
+    import sys
+
+    app = QApplication(sys.argv)
+
+    window = MainWindow()
+
+    window.show()
+
+    sys.exit(app.exec())
