@@ -1,0 +1,30 @@
+{
+  "journals": {
+    "sjsaf": {
+      "name_en": "Sadat Journal for Administrative and Financial Research",
+      "name_ar": "مجلة السادات للبحوث الإدارية والمالية",
+      "issn": "2974-3389",
+      "url": "https://sjsaf.journals.ekb.eg",
+      "first_volume_year": 2023
+    },
+    "jso": {
+      "name_en": "Journal of Administrative Research",
+      "name_ar": "مجلة البحوث الإدارية",
+      "issn": "3062-4770",
+      "url": "https://jso.journals.ekb.eg",
+      "first_volume_year": 1983
+    }
+  },
+  "issues": {
+    "1": { "month_en": "January", "month_ar": "يناير" },
+    "2": { "month_en": "April", "month_ar": "أبريل" },
+    "3": { "month_en": "July", "month_ar": "يوليو" },
+    "4": { "month_en": "October", "month_ar": "أكتوبر" }
+  },
+  "templates": {
+    "ar": "templates/template_ar.docx",
+    "en": "templates/template_en.docx"
+  },
+  "covers_folder": "covers",
+  "output_folder": "output"
+}
